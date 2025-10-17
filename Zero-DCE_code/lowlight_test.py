@@ -20,26 +20,38 @@ def setup_device():
     """
     Detect and return the best available device with priority:
     1. CUDA (NVIDIA GPU)
-    2. Intel XPU (Intel Integrated GPU) 
-    3. MPS (Apple Silicon)
-    4. CPU (Fallback)
+    2. DirectML (Windows - Intel/AMD/NVIDIA)
+    3. Intel XPU (Linux - Intel GPU) 
+    4. MPS (Apple Silicon)
+    5. CPU (Fallback)
     """
     device = torch.device("cpu")
     device_name = "CPU"
     
-    # Check CUDA (NVIDIA GPUs)
+    # Check CUDA (NVIDIA GPUs) - All platforms
     if torch.cuda.is_available():
         device = torch.device("cuda")
         device_name = f"CUDA ({torch.cuda.get_device_name()})"
         print(f"Using NVIDIA GPU: {torch.cuda.get_device_name()}")
     
-    # Check Intel XPU (Intel Integrated GPUs)
+    # Check DirectML (Windows - Intel/AMD/NVIDIA GPUs)
+    elif platform.system() == "Windows":
+        try:
+            import torch_directml
+            dml_device = torch_directml.device()
+            device = dml_device
+            device_name = "DirectML (Windows GPU)"
+            print("Using DirectML for GPU acceleration on Windows")
+        except ImportError:
+            print("torch-directml not available, skipping DirectML")
+    
+    # Check Intel XPU (Linux - Intel GPUs)
     elif hasattr(torch, 'xpu') and hasattr(torch.xpu, 'is_available') and torch.xpu.is_available():
         device = torch.device("xpu")
-        device_name = f"Intel XPU ({torch.xpu.get_device_name() if hasattr(torch.xpu, 'get_device_name') else 'Intel GPU'})"
+        device_name = f"Intel XPU"
         print(f"Using Intel Integrated GPU")
     
-    # Check MPS (Apple Silicon)
+    # Check MPS (Apple Silicon) - macOS only
     elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
         device = torch.device("mps")
         device_name = "Apple Silicon (MPS)"
@@ -56,10 +68,14 @@ def load_model(device):
     DCE_net = model.enhance_net_nopool().to(device)
     DCE_net.load_state_dict(torch.load('snapshots/Epoch99.pth', map_location=device))
     
-    # Intel GPU optimization (if using IPEX)
-    if device.type == 'xpu' and 'intel_extension_for_pytorch' in sys.modules:
-        import intel_extension_for_pytorch as ipex
-        DCE_net = ipex.optimize(DCE_net)
+    # Intel GPU optimization (if using IPEX and available)
+    if device.type == 'xpu':
+        try:
+            import intel_extension_for_pytorch as ipex
+            DCE_net = ipex.optimize(DCE_net)
+            print("Applied Intel IPEX optimizations")
+        except ImportError:
+            print("Intel IPEX not available, running without Intel optimizations")
     
     # Set to evaluation mode
     DCE_net.eval()
@@ -85,11 +101,14 @@ def lowlight(image_path, device, model):
     # Move tensor back to CPU for saving
     enhanced_image = enhanced_image.cpu()
     
-    image_path = image_path.replace('test_data','result')
+    # Cross-platform path handling
+    image_path = image_path.replace('test_data', 'result')
     result_path = image_path
     result_dir = os.path.dirname(result_path)
+    
+    # Create directory if it doesn't exist
     if not os.path.exists(result_dir):
-        os.makedirs(result_dir)
+        os.makedirs(result_dir, exist_ok=True)
 
     torchvision.utils.save_image(enhanced_image, result_path)
 
@@ -98,6 +117,7 @@ if __name__ == '__main__':
     print(f"Python version: {sys.version}")
     print(f"PyTorch version: {torch.__version__}")
     print(f"Platform: {platform.system()} {platform.machine()}")
+    print(f"Platform details: {platform.platform()}")
     
     # Setup device and model ONCE
     device = setup_device()
@@ -107,10 +127,19 @@ if __name__ == '__main__':
     
     with torch.no_grad():
         filePath = 'data/test_data/'
+        
+        # Cross-platform path handling
+        if not os.path.exists(filePath):
+            print(f"Error: Test data path '{filePath}' does not exist!")
+            sys.exit(1)
+            
         file_list = os.listdir(filePath)
 
         for file_name in file_list:
-            test_list = glob.glob(filePath+file_name+"/*") 
+            # Cross-platform glob pattern
+            pattern = os.path.join(filePath, file_name, "*")
+            test_list = glob.glob(pattern)
+            
             for image in test_list:
                 print(f"Processing: {image}")
                 lowlight(image, device, dce_model)
