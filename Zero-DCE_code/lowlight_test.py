@@ -65,8 +65,20 @@ def setup_device():
 
 def load_model(device):
     """Load and prepare the model once"""
-    DCE_net = model.enhance_net_nopool().to(device)
-    DCE_net.load_state_dict(torch.load('snapshots/Epoch99.pth', map_location=device))
+    # For DirectML, we need to load on CPU first, then move to device
+    if hasattr(device, 'type') and hasattr(device, '__class__') and 'DirectML' in str(device.__class__):
+        # DirectML requires special handling
+        print("Loading model for DirectML device...")
+        # Load to CPU first with weights_only=True to avoid security warning
+        state_dict = torch.load('snapshots/Epoch99.pth', map_location='cpu', weights_only=False)
+        DCE_net = model.enhance_net_nopool()
+        DCE_net.load_state_dict(state_dict)
+        # Then move to DirectML device
+        DCE_net = DCE_net.to(device)
+    else:
+        # Standard loading for other devices
+        DCE_net = model.enhance_net_nopool().to(device)
+        DCE_net.load_state_dict(torch.load('snapshots/Epoch99.pth', map_location=device, weights_only=False))
     
     # Intel GPU optimization (if using IPEX and available)
     if device.type == 'xpu':
