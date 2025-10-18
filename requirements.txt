@@ -1,6 +1,7 @@
 torch>=2.0.0
 opencv-python
 torchvision>=0.15.0
+Pillow==9.5.0
 # Platform-specific dependencies
 intel-extension-for-pytorch; sys_platform == "linux"
 torch-directml; sys_platform == "win32"
