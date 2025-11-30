@@ -24,8 +24,6 @@ def weights_init(m):
 
 
 
-
-
 def train(config):
 
 	os.environ['CUDA_VISIBLE_DEVICES']='0'
@@ -93,9 +91,9 @@ if __name__ == "__main__":
 
 	# Input Parameters
 	parser.add_argument('--lowlight_images_path', type=str, default="data/train_data/")
-	parser.add_argument('--lr', type=float, default=0.0001)
+	parser.add_argument('--lr', type=float, default=0.00001)
 	parser.add_argument('--weight_decay', type=float, default=0.0001)
-	parser.add_argument('--grad_clip_norm', type=float, default=0.1)
+	parser.add_argument('--grad_clip_norm', type=float, default=0.05)
 	parser.add_argument('--num_epochs', type=int, default=200)
 	parser.add_argument('--train_batch_size', type=int, default=8)
 	parser.add_argument('--val_batch_size', type=int, default=4)
