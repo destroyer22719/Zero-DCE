@@ -1,6 +1,6 @@
-python main.py --folder ./images/demo1 \
---metric BRISQUE PIQE NIQE RANKIQA METAIQA \
+python main.py --folder /content/Zero-DCE/Zero-DCE_code/data/result/DICM \
+--metric BRISQUE PIQE NIQE \
 --ext jpg png \
---record ./images/demo1.csv \
+--record /content/Zero-DCE/Zero-DCE_code/data/result/DICM/demo1.csv \
 --gpu True \
 --each_record t
