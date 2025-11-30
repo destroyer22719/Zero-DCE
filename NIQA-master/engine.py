@@ -6,8 +6,6 @@ from tqdm import tqdm
 from brisque.brisque import brisque
 from niqe.niqe import niqe
 from piqe.piqe import piqe
-from MetaIQA.model import MetaIQA
-from RankIQA.model import RankIQA
 
 import torch
 from utils import csv_record
@@ -29,11 +27,6 @@ class NiqaEngine:
         self.brisque_score = None
         self.niqe_score = None
         self.piqe_score = None
-        self.metaiqa_score = None
-        self.rankiqa_score = None
-        # Build CNN under conditions
-        if 'METAIQA' in self.opt.metric: self.metaIQA = MetaIQA(opt)
-        if 'RANKIQA' in self.opt.metric: self.rankIQA = RankIQA(opt)
 
         self.method_idx = 1
         self.total_method = None
@@ -51,11 +44,6 @@ class NiqaEngine:
     def metric_piqe(self, imglist):
         self.metric_funct(piqe, imglist)
 
-    def metric_metaiqa(self, imglist):
-        self.metric_funct(self.metaIQA, imglist)
-
-    def metric_rankiqa(self, imglist):
-        self.metric_funct(self.rankIQA, imglist)
 
     def metric_choice(self) -> list:
         if self.opt.metric:
@@ -67,10 +55,7 @@ class NiqaEngine:
                 metric_list.append(self.metric_niqe)
             if 'PIQE' in self.opt.metric:
                 metric_list.append(self.metric_piqe)
-            if 'METAIQA' in self.opt.metric:
-                metric_list.append(self.metric_metaiqa)
-            if 'RANKIQA' in self.opt.metric:
-                metric_list.append(self.metric_rankiqa)
+
         else:
             metric_list = [metric_pass]
         return metric_list
