@@ -31,8 +31,8 @@ def train(config):
 	DCE_net = model.enhance_net_nopool().cuda()
 
 	DCE_net.apply(weights_init)
-	if config.load_pretrain == True:
-	    DCE_net.load_state_dict(torch.load(config.pretrain_dir))
+	#if config.load_pretrain == True:
+	#    DCE_net.load_state_dict(torch.load(config.pretrain_dir))
 	train_dataset = dataloader.lowlight_loader(config.lowlight_images_path)		
 	
 	train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=config.train_batch_size, shuffle=True, num_workers=config.num_workers, pin_memory=True)
@@ -94,7 +94,7 @@ if __name__ == "__main__":
 	parser.add_argument('--lr', type=float, default=0.00001)
 	parser.add_argument('--weight_decay', type=float, default=0.0001)
 	parser.add_argument('--grad_clip_norm', type=float, default=0.05)
-	parser.add_argument('--num_epochs', type=int, default=200)
+	parser.add_argument('--num_epochs', type=int, default=50)
 	parser.add_argument('--train_batch_size', type=int, default=8)
 	parser.add_argument('--val_batch_size', type=int, default=4)
 	parser.add_argument('--num_workers', type=int, default=4)
